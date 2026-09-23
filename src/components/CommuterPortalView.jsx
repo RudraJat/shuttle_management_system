@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Bus, QrCode, History, CheckCircle, ArrowRight, Star, ShieldCheck, RefreshCw, Lock, Sparkles, Navigation, Clock, User, Ban } from 'lucide-react';
 import JellyRadio from './JellyRadio';
 import Peel from './Peel';
@@ -8,26 +8,35 @@ export const CommuterPortalView = ({
   bookings = [],
   routes = [],
   shuttles = [],
+  bookingDate,
   onBookRide,
   onCancelBooking,
 }) => {
   const [activeSubTab, setActiveSubTab] = useState('book');
-  const [userRole, setUserRole] = useState('Student'); // Student or Staff
-  const [studentName, setStudentName] = useState('Thompson');
-  const [studentId, setStudentId] = useState('123123');
+  const [userRole, setUserRole] = useState(() => localStorage.getItem('commuterRole') || 'Student');
+  const [studentName, setStudentName] = useState(() => localStorage.getItem('commuterName') || '');
+  const [studentId, setStudentId] = useState(() => localStorage.getItem('commuterId') || '');
   const [fromStop, setFromStop] = useState(CAMPUS_STOPS[1]); // Central Library
   const [toStop, setToStop] = useState(CAMPUS_STOPS[3]);   // Data Centre
   const [requestedTime, setRequestedTime] = useState('11:35');
   const [passengerNotes, setPassengerNotes] = useState('');
   const [selectedRouteId, setSelectedRouteId] = useState('rt-1');
-  const [latestPass, setLatestPass] = useState(null);
+  const [selectedTripId, setSelectedTripId] = useState(null);
+
+  useEffect(() => {
+    localStorage.setItem('commuterRole', userRole);
+    localStorage.setItem('commuterName', studentName);
+    localStorage.setItem('commuterId', studentId);
+  }, [userRole, studentName, studentId]);
 
   // Filter my trips
-  const myTrips = bookings.filter((b) => {
-    const nameMatch = (b.employeeName || '').toLowerCase().includes(studentName.trim().toLowerCase());
-    const idMatch = (b.employeeId || '').toLowerCase().includes(studentId.trim().toLowerCase());
-    return (nameMatch && studentName.trim().length > 1) || (idMatch && studentId.trim().length > 2);
+  const normalizedStudentId = studentId.trim().replace(/^(stu|emp)-/i, '');
+  const commuterId = normalizedStudentId.toLowerCase();
+  const myTrips = bookings.filter((booking) => {
+    const bookingId = (booking.employeeId || '').replace(/^(stu|emp)-/i, '').toLowerCase();
+    return bookingId === commuterId && commuterId.length > 0;
   });
+  const approvedPass = myTrips.find((booking) => booking.id === selectedTripId && booking.status === 'Accepted');
 
   // Active Ongoing or Waiting Trip
   const activeTrip = myTrips.find((t) => t.status === 'On Going' || t.status === 'Waiting' || t.status === 'Accepted');
@@ -50,19 +59,19 @@ export const CommuterPortalView = ({
     const newBooking = {
       id: newBookingId,
       employeeName: studentName.trim() || 'Campus Commuter',
-      employeeId: userRole === 'Student' ? `STU-${studentId}` : `EMP-${studentId}`,
+      employeeId: `${userRole === 'Student' ? 'STU' : 'EMP'}-${normalizedStudentId}`,
       role: userRole,
       fromLocation: fromStop,
       toLocation: toStop,
       requestedPickupTime: requestedTime || `${nowHours}:${nowMins}`,
       plannedDropTime: `${dropHours}:${dropMins}`,
       status: 'Waiting',
-      vehicleNumber: matchingShuttle ? matchingShuttle.vehicleNumber : 'NB-002-RF',
-      vehicleDetails: matchingShuttle ? matchingShuttle.model : 'UA3282 White Bus | 12 Seater',
-      driverName: matchingShuttle ? matchingShuttle.driverName : 'Steve Smith',
-      driverPhone: matchingShuttle ? matchingShuttle.driverPhone : '+1-322-493-3292',
-      driverRating: matchingShuttle ? matchingShuttle.driverRating : 4.5,
-      date: 'Dec 16, 2024',
+      vehicleNumber: '-',
+      vehicleDetails: 'Awaiting admin assignment',
+      driverName: 'Unassigned',
+      driverPhone: '-',
+      driverRating: 0,
+      date: bookingDate || new Date().toISOString().slice(0, 10),
       pickupTime: '-',
       actualDropTime: '-',
       delayMinutes: 0,
@@ -70,7 +79,7 @@ export const CommuterPortalView = ({
     };
 
     onBookRide(newBooking);
-    setLatestPass(newBooking);
+    setSelectedTripId(newBookingId);
   };
 
   return (
@@ -97,7 +106,7 @@ export const CommuterPortalView = ({
           </div>
           <h1 style={{ fontSize: '1.6rem', fontWeight: 800 }}>Student & Staff Commuter Portal</h1>
           <p style={{ color: '#94a3b8', fontSize: '0.88rem', marginTop: '4px' }}>
-            Instant campus transit booking, real-time shuttle radar, digital QR e-Pass, and trip tracking history.
+            Instant campus transit booking, digital QR e-Pass, and trip tracking history.
           </p>
         </div>
 
@@ -255,6 +264,7 @@ export const CommuterPortalView = ({
                     required
                     className="form-control"
                     value={studentName}
+                    placeholder="e.g. Thompson"
                     onChange={(e) => setStudentName(e.target.value)}
                   />
                 </div>
@@ -266,6 +276,7 @@ export const CommuterPortalView = ({
                     required
                     className="form-control"
                     value={studentId}
+                    placeholder={userRole === 'Student' ? 'e.g. 12019482' : 'e.g. EMP-12019482'}
                     onChange={(e) => setStudentId(e.target.value)}
                   />
                 </div>
@@ -363,8 +374,8 @@ export const CommuterPortalView = ({
             </form>
           </div>
 
-          {/* Digital QR e-Pass Card with Canvas UI <Peel /> Sticker */}
-          <Peel
+          {/* Digital QR e-Pass appears only after admin acceptance. */}
+          {approvedPass && <Peel
             side="left"
             mode="cursor"
             reveal={260}
@@ -478,14 +489,14 @@ export const CommuterPortalView = ({
                 >
                   <QrCode size={120} color="#0f172a" />
                   <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: '4px' }}>
-                    PASS-{latestPass ? latestPass.id : '123123'}
+                    PASS-{approvedPass.id}
                   </span>
                 </div>
 
                 <div style={{ marginTop: '16px' }}>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{studentName}</div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{approvedPass.employeeName}</div>
                   <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                    ID: {userRole === 'Student' ? 'STU' : 'EMP'}-{studentId} ({userRole})
+                    ID: {approvedPass.employeeId} ({userRole})
                   </div>
                 </div>
 
@@ -506,19 +517,19 @@ export const CommuterPortalView = ({
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ color: 'var(--text-muted)' }}>From:</span>
-                    <strong>{fromStop}</strong>
+                    <strong>{approvedPass.fromLocation}</strong>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ color: 'var(--text-muted)' }}>To:</span>
-                    <strong>{toStop}</strong>
+                    <strong>{approvedPass.toLocation}</strong>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ color: 'var(--text-muted)' }}>Pickup:</span>
-                    <strong>{requestedTime}</strong>
+                    <strong>{approvedPass.requestedPickupTime}</strong>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ color: 'var(--text-muted)' }}>Assigned Driver:</span>
-                    <strong>{matchingShuttle ? matchingShuttle.driverName : 'Steve Smith'}</strong>
+                    <strong>{approvedPass.driverName || 'Unassigned'}</strong>
                   </div>
                 </div>
 
@@ -527,7 +538,7 @@ export const CommuterPortalView = ({
                 </p>
               </div>
             </div>
-          </Peel>
+          </Peel>}
         </div>
       ) : (
         /* Trip History Tracking */
@@ -566,7 +577,15 @@ export const CommuterPortalView = ({
                   </tr>
                 ) : (
                   myTrips.map((trip) => (
-                    <tr key={trip.id}>
+                    <tr
+                      key={trip.id}
+                      onClick={() => {
+                        setSelectedTripId(trip.id);
+                        setActiveSubTab('book');
+                      }}
+                      style={{ cursor: 'pointer' }}
+                      title={trip.status === 'Accepted' ? 'Select to view your QR pass' : 'Select ride'}
+                    >
                       <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--brand-blue)' }}>
                         #{trip.id}
                       </td>
@@ -596,7 +615,8 @@ export const CommuterPortalView = ({
                         <button
                           type="button"
                           className="btn-view"
-                          onClick={() => {
+                          onClick={(event) => {
+                            event.stopPropagation();
                             setFromStop(trip.fromLocation);
                             setToStop(trip.toLocation);
                             setActiveSubTab('book');

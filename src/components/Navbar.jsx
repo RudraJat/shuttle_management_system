@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bus, Moon, Sun, Code2, PlusCircle, Layers, TrendingUp, Route as RouteIcon, UserCheck, Navigation, Clock, ShieldCheck, User, Menu, X } from 'lucide-react';
+import { Bus, Moon, Sun, Layers, TrendingUp, Route as RouteIcon, UserCheck, ShieldCheck, User, Menu, X } from 'lucide-react';
 import JellyRadio from './JellyRadio';
 
 export const Navbar = ({
@@ -8,27 +8,24 @@ export const Navbar = ({
   isBackendConnected,
   theme,
   toggleTheme,
-  onOpenComplexity,
-  onOpenNewBooking,
-  simTime = '11:24:18',
-  isSimRunning = true,
   currentRole = 'admin', // 'admin' or 'commuter'
   onChangeRole,
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const isAdminView = activeTab !== 'commuter';
 
-  const navItems = [
-    { value: 'management', label: 'Management', icon: <Layers size={13} /> },
-    { value: 'radar', label: 'Live GPS Radar', icon: <Navigation size={13} /> },
-    { value: 'performance', label: 'Performance', icon: <TrendingUp size={13} /> },
-    { value: 'routes', label: 'Campus Routes', icon: <RouteIcon size={13} /> },
-    { value: 'commuter', label: 'Commuter Portal', icon: <UserCheck size={13} /> },
-  ];
+  const navItems = isAdminView
+    ? [
+        { value: 'management', label: 'Management', icon: <Layers size={13} /> },
+        { value: 'performance', label: 'Performance', icon: <TrendingUp size={13} /> },
+        { value: 'routes', label: 'Campus Routes', icon: <RouteIcon size={13} /> },
+      ]
+    : [{ value: 'commuter', label: 'Commuter Portal', icon: <UserCheck size={13} /> }];
 
   const handleTabChange = (val) => {
     setActiveTab(val);
     if (val === 'commuter' && onChangeRole) onChangeRole('commuter');
-    if (val === 'management' && onChangeRole) onChangeRole('admin');
+    if (val !== 'commuter' && onChangeRole) onChangeRole('admin');
     setIsMobileMenuOpen(false);
   };
 
@@ -81,27 +78,6 @@ export const Navbar = ({
 
         {/* 3. Right Action Toolbar */}
         <div className="nav-actions">
-          {/* Live Clock Pill */}
-          <div className="nav-pill-clock" title="Campus Transit Synchronized Live Clock">
-            <span className="live-dot-green" />
-            <span className="clock-time">{simTime}</span>
-          </div>
-
-          {/* Backend Connection Status Badge */}
-          <div
-            className="badge-server-status"
-            title={
-              isBackendConnected
-                ? 'Connected to Java REST API at http://localhost:8085'
-                : 'Operating in local real-time mode with persistent storage'
-            }
-          >
-            <div className={`status-dot ${isBackendConnected ? 'online' : 'offline'}`} />
-            <span className="server-status-label">
-              {isBackendConnected ? 'API Live' : 'Local Live'}
-            </span>
-          </div>
-
           {/* Persona Role Switcher */}
           <button
             type="button"
@@ -128,35 +104,15 @@ export const Navbar = ({
             )}
           </button>
 
-          {/* Algorithmic Complexity Evaluation Modal Button */}
-          <button
-            type="button"
-            className="btn-icon"
-            title="View Algorithmic Complexity Analysis (LPU Evaluation Criteria)"
-            onClick={onOpenComplexity}
-          >
-            <Code2 size={17} />
-          </button>
-
           {/* Theme Toggle Button */}
-          <button
+          {activeTab !== 'commuter' && <button
             type="button"
             className="btn-icon"
             title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
             onClick={toggleTheme}
           >
             {theme === 'light' ? <Moon size={17} /> : <Sun size={17} />}
-          </button>
-
-          {/* New Booking Primary Button */}
-          <button
-            type="button"
-            className="btn-primary btn-new-booking"
-            onClick={onOpenNewBooking}
-          >
-            <PlusCircle size={15} />
-            <span className="btn-booking-text">New Booking</span>
-          </button>
+          </button>}
 
           {/* Mobile Navigation Toggle Button */}
           <button

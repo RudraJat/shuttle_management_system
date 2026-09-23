@@ -9,14 +9,11 @@ import { NewBookingModal } from './components/NewBookingModal.jsx';
 import { RouteManagerView } from './components/RouteManagerModal.jsx';
 import { CommuterPortalView } from './components/CommuterPortalView.jsx';
 import { AnalyticsView } from './components/AnalyticsView.jsx';
-import { ComplexityModal } from './components/ComplexityModal.jsx';
 import { ToastNotification } from './components/ToastNotification.jsx';
-import { LiveTransitMap } from './components/LiveTransitMap.jsx';
 import { api } from './services/api.js';
 import {
   getStoredData,
   setStoredData,
-  INITIAL_BOOKINGS,
   INITIAL_DRIVERS,
   INITIAL_ROUTES,
   INITIAL_LIVE_SHUTTLES,
@@ -26,35 +23,47 @@ export const App = () => {
   const [activeTab, setActiveTab] = useState('management');
   const [theme, setTheme] = useState('light');
   const [isBackendConnected, setIsBackendConnected] = useState(false);
-  const [selectedDate, setSelectedDate] = useState('Dec 16, 2024');
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [currentRole, setCurrentRole] = useState('admin');
 
   // Core Data with LocalStorage Persistence & Real-time Fallback
-  const [bookings, setBookings] = useState(() => getStoredData('bookings', INITIAL_BOOKINGS));
-  const [drivers, setDrivers] = useState(() => getStoredData('drivers', INITIAL_DRIVERS));
+  const [bookings, setBookings] = useState(() => {
+    const bookingDataVersion = 'bookings-v3-preserve-real-rides';
+    const storedBookings = getStoredData('bookings', []);
+    if (localStorage.getItem('bookingDataVersion') !== bookingDataVersion) {
+      const demoBookingIds = new Set([
+        '123123', '324235', '545232', '434532', '545233', '434533', '545234',
+        '434535', '545236', '434537', '601001', '601002', '601003', '601004',
+        '601005', '601006', '601007', '601008', '601009', '601010', '601011',
+      ]);
+      const realBookings = storedBookings.filter((booking) => !demoBookingIds.has(String(booking.id)));
+      localStorage.setItem('bookings', JSON.stringify(realBookings));
+      localStorage.setItem('bookingDataVersion', bookingDataVersion);
+      return realBookings;
+    }
+    return storedBookings;
+  });
+  const [drivers, setDrivers] = useState(() =>
+    getStoredData('drivers', INITIAL_DRIVERS).map((driver) => (
+      driver.id === 'drv-1'
+        ? {
+            ...driver,
+            vehicleNumber: 'NB-003-RF',
+            blocks: driver.blocks.map((block) => ({ ...block, vehicleNumber: 'NB-003-RF' })),
+          }
+        : driver
+    ))
+  );
   const [routes, setRoutes] = useState(() => getStoredData('routes', INITIAL_ROUTES));
   const [shuttles, setShuttles] = useState(() => getStoredData('shuttles', INITIAL_LIVE_SHUTTLES));
   const [analytics, setAnalytics] = useState(null);
-
-  // Real-Time Simulation State
-  const [isSimRunning, setIsSimRunning] = useState(true);
-  const [simSpeed, setSimSpeed] = useState(1);
-  const [simTime, setSimTime] = useState(() => {
-    const d = new Date();
-    return d.toTimeString().split(' ')[0];
-  });
-  const [activeEvents, setActiveEvents] = useState([
-    'Shuttle NB-002-RF on schedule along Central Campus Express',
-    'Shuttle MH-12-PQ-4412 arrived at Food Court (11 passengers)',
-    'Real-time transit telemetry synchronized across all campus stops',
-  ]);
 
   // Modals & Drawers
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [editingBooking, setEditingBooking] = useState(null);
   const [dutyDriver, setDutyDriver] = useState(null);
+  const [dutyMode, setDutyMode] = useState('BREAK');
   const [isNewBookingOpen, setIsNewBookingOpen] = useState(false);
-  const [isComplexityOpen, setIsComplexityOpen] = useState(false);
 
   // Toasts
   const [toasts, setToasts] = useState([]);
@@ -95,47 +104,6 @@ export const App = () => {
     setStoredData('shuttles', shuttles);
   }, [shuttles]);
 
-  // Real-Time Simulation Ticker (1 second heartbeat)
-  useEffect(() => {
-    const timer = setInterval(() => {
-      // 1. Update Clock
-      const now = new Date();
-      setSimTime(now.toTimeString().split(' ')[0]);
-
-      if (!isSimRunning) return;
-
-      // 2. Advance Shuttles along their routes
-      setShuttles((prevShuttles) =>
-        prevShuttles.map((shuttle) => {
-          const route = routes.find((r) => r.id === shuttle.routeId);
-          const stops = route?.stops || ['Main Gate', 'Central Library'];
-          const step = 0.025 * simSpeed;
-          let newProgress = shuttle.progressToNext + step;
-          let newStopIndex = shuttle.currentStopIndex;
-
-          if (newProgress >= 1.0) {
-            newProgress = 0;
-            newStopIndex = (newStopIndex + 1) % stops.length;
-            const reachedStop = stops[newStopIndex];
-
-            // Add broadcast event
-            const eventMsg = `Shuttle ${shuttle.vehicleNumber} arrived at ${reachedStop}`;
-            setActiveEvents((prevEvts) => [eventMsg, ...prevEvts.slice(0, 7)]);
-          }
-
-          return {
-            ...shuttle,
-            currentStopIndex: newStopIndex,
-            progressToNext: newProgress,
-            speedKmh: Math.floor(20 + Math.random() * 12),
-          };
-        })
-      );
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [isSimRunning, simSpeed, routes]);
-
   // Initial Load & Background Health Check against Java REST server
   const loadBackendData = async () => {
     try {
@@ -149,7 +117,8 @@ export const App = () => {
           api.getRoutes(),
           api.getAnalytics(),
         ]);
-        if (bList && bList.length > 0) setBookings(bList);
+        // Do not erase locally cached rides when the in-memory backend is empty or restarting.
+        if (Array.isArray(bList) && bList.length > 0) setBookings(bList);
         if (dList && dList.length > 0) setDrivers(dList);
         if (rList && rList.length > 0) setRoutes(rList);
         if (aData) setAnalytics(aData);
@@ -168,6 +137,11 @@ export const App = () => {
   // Update Booking Status
   const handleUpdateBookingStatus = async (id, status, notes) => {
     try {
+      const existingBooking = bookings.find((booking) => booking.id === id);
+      if (existingBooking?.status === 'Completed') {
+        addToast('info', `Completed booking #${id} cannot be changed`);
+        return;
+      }
       if (isBackendConnected) {
         const updated = await api.updateBookingStatus(id, status, notes);
         setBookings((prev) => prev.map((b) => (b.id === id ? updated : b)));
@@ -181,7 +155,6 @@ export const App = () => {
         }
       }
       addToast('success', `Booking #${id} updated to ${status}`);
-      setActiveEvents((prev) => [`Dispatch updated Booking #${id} to ${status}`, ...prev.slice(0, 7)]);
     } catch (err) {
       addToast('error', `Failed to update status: ${err.message}`);
     }
@@ -191,7 +164,30 @@ export const App = () => {
   const handleSaveBookingEdit = async (updatedData) => {
     if (!editingBooking) return;
     const id = editingBooking.id;
+    if (editingBooking.status === 'Completed') {
+      addToast('info', `Completed booking #${editingBooking.id} cannot be edited`);
+      setEditingBooking(null);
+      return;
+    }
 
+    const timeToMinutes = (value) => {
+      const match = String(value || '').match(/^(\d{1,2}):(\d{2})/);
+      return match ? Number(match[1]) * 60 + Number(match[2]) : null;
+    };
+    const newStart = timeToMinutes(updatedData.requestedPickupTime);
+    const newEnd = timeToMinutes(updatedData.plannedDropTime);
+    const activeStatuses = ['Accepted', 'Waiting', 'Requested', 'On Going'];
+    const hasConflict = updatedData.driverName && updatedData.driverName !== 'Unassigned' && newStart !== null && newEnd !== null && bookings.some((booking) => {
+      if (booking.id === id || booking.driverName !== updatedData.driverName || booking.date !== editingBooking.date) return false;
+      if (!activeStatuses.includes(booking.status)) return false;
+      const existingStart = timeToMinutes(booking.requestedPickupTime);
+      const existingEnd = timeToMinutes(booking.plannedDropTime);
+      return existingStart !== null && existingEnd !== null && newStart < existingEnd && newEnd > existingStart;
+    });
+    if (hasConflict) {
+      addToast('error', `${updatedData.driverName} already has an overlapping ride at that time`);
+      return;
+    }
     try {
       if (isBackendConnected) {
         const updated = await api.updateBooking(id, updatedData);
@@ -207,7 +203,6 @@ export const App = () => {
       }
       setEditingBooking(null);
       addToast('success', `Booking #${id} successfully modified by admin`);
-      setActiveEvents((prev) => [`Admin updated route/driver for Booking #${id}`, ...prev.slice(0, 7)]);
     } catch (err) {
       addToast('error', `Failed to edit booking: ${err.message}`);
     }
@@ -234,13 +229,11 @@ export const App = () => {
         const created = await api.createBooking(newBooking);
         setBookings((prev) => [created, ...prev]);
         addToast('success', `Ride booked! Pass issued with ID: #${created.id}`);
-        setActiveEvents((prev) => [`New ride #${created.id} booked: ${created.fromLocation} → ${created.toLocation}`, ...prev.slice(0, 7)]);
       } else {
         const id = newBooking.id || String(Math.floor(Math.random() * 900000 + 100000));
         const created = { ...newBooking, id };
         setBookings((prev) => [created, ...prev]);
         addToast('success', `Ride #${id} scheduled successfully!`);
-        setActiveEvents((prev) => [`New ride #${id} booked: ${created.fromLocation} → ${created.toLocation}`, ...prev.slice(0, 7)]);
       }
     } catch (err) {
       addToast('error', `Failed to create booking: ${err.message}`);
@@ -248,10 +241,10 @@ export const App = () => {
   };
 
   // Driver Duty Actions
-  const handleDutyAction = async (driverId, action) => {
+  const handleDutyAction = async (driverId, action, scheduledHour) => {
     try {
       const targetDriver = drivers.find((d) => d.id === driverId);
-      const hour = action === 'START_DUTY' ? 8.0 : 18.0;
+      const hour = Number(scheduledHour) || (action === 'START_DUTY' ? 8.0 : 18.0);
 
       if (isBackendConnected) {
         const updated = await api.updateDriverDuty(driverId, action, hour);
@@ -260,7 +253,21 @@ export const App = () => {
         setDrivers((prev) =>
           prev.map((d) =>
             d.id === driverId
-              ? { ...d, status: action === 'START_DUTY' ? 'Online' : 'Offline' }
+              ? {
+                  ...d,
+                  status: action === 'START_DUTY' ? 'Online' : 'Offline',
+                  blocks: [
+                    ...(d.blocks || []).filter((block) => block.details !== 'LIVE' || block.type !== action),
+                    {
+                      id: `live-${action.toLowerCase()}-${Date.now()}`,
+                      type: action,
+                      startHour: action === 'START_DUTY' ? hour : hour - 0.5,
+                      endHour: action === 'START_DUTY' ? hour + 0.5 : hour,
+                      label: action === 'START_DUTY' ? 'Start Duty' : 'End Duty',
+                      details: 'LIVE',
+                    },
+                  ],
+                }
               : d
           )
         );
@@ -271,6 +278,21 @@ export const App = () => {
       );
     } catch (err) {
       addToast('error', `Duty change failed: ${err.message}`);
+    }
+  };
+
+  const handleDriverStatusToggle = async (driverId, status) => {
+    try {
+      const targetDriver = drivers.find((driver) => driver.id === driverId);
+      if (isBackendConnected) {
+        const updated = await api.updateDriver(driverId, { status });
+        setDrivers((prev) => prev.map((driver) => (driver.id === driverId ? updated : driver)));
+      } else {
+        setDrivers((prev) => prev.map((driver) => (driver.id === driverId ? { ...driver, status } : driver)));
+      }
+      addToast('success', `${targetDriver?.name || 'Driver'} is now ${status}`);
+    } catch (err) {
+      addToast('error', `Could not update driver status: ${err.message}`);
     }
   };
 
@@ -286,15 +308,15 @@ export const App = () => {
             d.id === driverId
               ? {
                   ...d,
-                  status: 'On Break',
                   blocks: [
-                    ...d.blocks,
+                    ...(d.blocks || []).filter((block) => block.details !== 'LIVE' || block.type !== 'BREAK'),
                     {
                       id: `blk-${Date.now()}`,
                       type: 'BREAK',
                       startHour,
                       endHour,
                       label,
+                      details: 'LIVE',
                       pickups: 0,
                       drops: 0,
                       vehicleNumber: d.vehicleNumber,
@@ -329,10 +351,6 @@ export const App = () => {
     }
   };
 
-  const cycleSimSpeed = () => {
-    setSimSpeed((prev) => (prev === 1 ? 2 : prev === 2 ? 5 : 1));
-  };
-
   return (
     <div className="app-container">
       {/* Top Navbar */}
@@ -342,10 +360,7 @@ export const App = () => {
         isBackendConnected={isBackendConnected}
         theme={theme}
         toggleTheme={toggleTheme}
-        onOpenComplexity={() => setIsComplexityOpen(true)}
         onOpenNewBooking={() => setIsNewBookingOpen(true)}
-        simTime={simTime}
-        isSimRunning={isSimRunning}
         currentRole={currentRole}
         onChangeRole={(role) => setCurrentRole(role)}
       />
@@ -354,24 +369,17 @@ export const App = () => {
       <main className="main-content">
         {activeTab === 'management' && (
           <>
-            {/* Live GPS Telemetry Radar Widget */}
-            <LiveTransitMap
-              shuttles={shuttles}
-              routes={routes}
-              bookings={bookings}
-              simTime={simTime}
-              isSimRunning={isSimRunning}
-              simSpeed={simSpeed}
-              onToggleSim={() => setIsSimRunning(!isSimRunning)}
-              onCycleSpeed={cycleSimSpeed}
-              activeEvents={activeEvents}
-            />
-
             {/* Driver Availability Timeline (Screenshot page 12) */}
             <DriverTimeline
               drivers={drivers}
+              bookings={bookings}
               selectedDate={selectedDate}
               onDutyAction={handleDutyAction}
+              onOpenDutyModal={(driver, mode) => {
+                setDutyDriver(driver);
+                setDutyMode(mode);
+              }}
+              onStatusToggle={handleDriverStatusToggle}
               onOpenBreakModal={(driver) => setDutyDriver(driver)}
               onSelectBlock={(driver, block) => {
                 addToast('info', `${driver.name}: ${block.label} (${block.startHour}:00 - ${block.endHour}:00)`);
@@ -382,6 +390,7 @@ export const App = () => {
             <BookingManagementTable
               bookings={bookings}
               selectedDate={selectedDate}
+              onDateChange={setSelectedDate}
               onViewBooking={(booking) => setSelectedBooking(booking)}
               onEditBooking={(booking) => setEditingBooking(booking)}
               onUpdateBookingStatus={handleUpdateBookingStatus}
@@ -390,22 +399,12 @@ export const App = () => {
           </>
         )}
 
-        {activeTab === 'radar' && (
-          <LiveTransitMap
-            shuttles={shuttles}
-            routes={routes}
-            bookings={bookings}
-            simTime={simTime}
-            isSimRunning={isSimRunning}
-            simSpeed={simSpeed}
-            onToggleSim={() => setIsSimRunning(!isSimRunning)}
-            onCycleSpeed={cycleSimSpeed}
-            activeEvents={activeEvents}
-          />
-        )}
-
         {activeTab === 'performance' && (
-          <AnalyticsView analytics={analytics} />
+          <AnalyticsView
+            bookings={bookings}
+            selectedDate={selectedDate}
+            onDateChange={setSelectedDate}
+          />
         )}
 
         {activeTab === 'routes' && (
@@ -421,6 +420,7 @@ export const App = () => {
             bookings={bookings}
             routes={routes}
             shuttles={shuttles}
+            bookingDate={selectedDate}
             onBookRide={handleCreateBooking}
             onCancelBooking={(id) => handleUpdateBookingStatus(id, 'Cancelled', 'Cancelled by commuter')}
           />
@@ -449,21 +449,18 @@ export const App = () => {
       {/* Driver Duty Modal */}
       <DriverDutyModal
         driver={dutyDriver}
+        mode={dutyMode}
         onClose={() => setDutyDriver(null)}
         onAddBreak={handleAddBreak}
+        onDutyAction={handleDutyAction}
       />
 
       {/* New Booking Modal */}
       <NewBookingModal
         isOpen={isNewBookingOpen}
+        bookingDate={selectedDate}
         onClose={() => setIsNewBookingOpen(false)}
         onCreate={handleCreateBooking}
-      />
-
-      {/* Complexity Analysis Modal */}
-      <ComplexityModal
-        isOpen={isComplexityOpen}
-        onClose={() => setIsComplexityOpen(false)}
       />
 
       {/* Feedback Toast System */}

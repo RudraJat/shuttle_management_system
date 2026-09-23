@@ -29,7 +29,8 @@ const ALL_STATUSES = [
 
 export const BookingManagementTable = ({
   bookings = [],
-  selectedDate = 'Dec 16, 2024',
+  selectedDate = '',
+  onDateChange,
   onViewBooking,
   onEditBooking,
   onUpdateBookingStatus,
@@ -54,7 +55,8 @@ export const BookingManagementTable = ({
       (b.vehicleNumber || '').toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesStatus = statusFilter === 'All' || (b.status || '').toLowerCase() === statusFilter.toLowerCase();
-    return matchesSearch && matchesStatus;
+    const matchesDate = !selectedDate || b.date === selectedDate;
+    return matchesSearch && matchesStatus && matchesDate;
   });
 
   // Sort logic
@@ -116,7 +118,7 @@ export const BookingManagementTable = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <h2 className="card-title" style={{ margin: 0 }}>Booking Management (Admin Dispatch)</h2>
           <span style={{ fontSize: '0.78rem', background: 'var(--bg-card-subtle)', padding: '3px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', fontWeight: 600 }}>
-            {bookings.length} Total Bookings
+            {filtered.length} Total Bookings
           </span>
         </div>
 
@@ -136,7 +138,15 @@ export const BookingManagementTable = ({
 
           <div className="date-badge-box">
             <Calendar size={15} color="var(--brand-primary)" />
-            <span>{selectedDate}</span>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => {
+                onDateChange?.(e.target.value);
+                setCurrentPage(1);
+              }}
+              aria-label="Booking date"
+            />
           </div>
         </div>
       </div>
@@ -231,19 +241,17 @@ export const BookingManagementTable = ({
               <th style={{ cursor: 'pointer' }} onClick={() => toggleSort('id')}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <span>Booking ID</span>
-                  <ArrowUpDown size={12} />
+                
                 </div>
               </th>
               <th style={{ cursor: 'pointer' }} onClick={() => toggleSort('employeeName')}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <span>Passenger (User)</span>
-                  <ArrowUpDown size={12} />
                 </div>
               </th>
               <th style={{ cursor: 'pointer' }} onClick={() => toggleSort('status')}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <span>Status</span>
-                  <ArrowUpDown size={12} />
                 </div>
               </th>
               <th>From</th>
@@ -267,6 +275,7 @@ export const BookingManagementTable = ({
               paginated.map((booking) => {
                 const isSelected = selectedIds.includes(booking.id);
                 const isOngoing = booking.status === 'On Going';
+                const isCompleted = booking.status === 'Completed';
 
                 return (
                   <tr key={booking.id} style={{ background: isSelected ? 'var(--bg-hover)' : undefined }}>
@@ -310,6 +319,7 @@ export const BookingManagementTable = ({
                         <select
                           className={getStatusBadgeClass(booking.status)}
                           value={booking.status}
+                          disabled={isCompleted}
                           onChange={(e) => {
                             if (onUpdateBookingStatus) {
                               onUpdateBookingStatus(booking.id, e.target.value, `Status updated to ${e.target.value} by Admin`);
@@ -363,7 +373,7 @@ export const BookingManagementTable = ({
                     <td style={{ textAlign: 'center' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                         {/* View Button (Drawer) */}
-                        <button
+                        {!isCompleted && <button
                           type="button"
                           className="btn-view"
                           onClick={() => onViewBooking(booking)}
@@ -371,10 +381,10 @@ export const BookingManagementTable = ({
                         >
                           <Eye size={13} />
                           <span>View</span>
-                        </button>
+                        </button>}
 
                         {/* Edit Button (Admin Modify Modal) */}
-                        <button
+                        {!isCompleted && <button
                           type="button"
                           className="btn-secondary"
                           style={{ padding: '4px 8px', fontSize: '0.76rem', color: 'var(--brand-blue)' }}
@@ -383,7 +393,7 @@ export const BookingManagementTable = ({
                         >
                           <Edit3 size={13} />
                           <span>Edit</span>
-                        </button>
+                        </button>}
 
                         {/* Delete / Cancel Button */}
                         {onDeleteBooking && (

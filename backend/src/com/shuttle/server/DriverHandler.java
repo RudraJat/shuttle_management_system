@@ -100,13 +100,15 @@ public class DriverHandler implements HttpHandler {
             if ("START_DUTY".equalsIgnoreCase(action)) {
                 driver.setStatus("Online");
                 driver.setDutyStartHour(hour);
+                driver.getBlocks().removeIf(block -> "LIVE".equals(block.getDetails()) && "DUTY_START".equals(block.getType()));
                 driver.addBlock(new DutyBlock("blk-" + UUID.randomUUID().toString().substring(0, 6),
-                        "DUTY_START", hour, hour + 0.5, "Start Duty", 0, 0, driver.getVehicleNumber(), "Shift Started"));
+                    "DUTY_START", hour, hour + 0.5, "Start Duty", 0, 0, driver.getVehicleNumber(), "LIVE"));
             } else if ("END_DUTY".equalsIgnoreCase(action)) {
                 driver.setStatus("Offline");
                 driver.setDutyEndHour(hour);
+                driver.getBlocks().removeIf(block -> "LIVE".equals(block.getDetails()) && "DUTY_END".equals(block.getType()));
                 driver.addBlock(new DutyBlock("blk-" + UUID.randomUUID().toString().substring(0, 6),
-                        "DUTY_END", hour - 0.5, hour, "Duty End", 0, 0, driver.getVehicleNumber(), "Shift Ended"));
+                    "DUTY_END", hour - 0.5, hour, "End Duty", 0, 0, driver.getVehicleNumber(), "LIVE"));
             } else {
                 if (map.containsKey("startHour")) driver.setDutyStartHour(getDouble(map, "startHour", driver.getDutyStartHour()));
                 if (map.containsKey("endHour")) driver.setDutyEndHour(getDouble(map, "endHour", driver.getDutyEndHour()));
@@ -136,11 +138,13 @@ public class DriverHandler implements HttpHandler {
             String veh = String.valueOf(map.getOrDefault("vehicleNumber", driver.getVehicleNumber()));
             String details = String.valueOf(map.getOrDefault("details", "Scheduled"));
 
+            if ("BREAK".equalsIgnoreCase(type)) {
+                driver.getBlocks().removeIf(block -> "LIVE".equals(block.getDetails()) && "BREAK".equals(block.getType()));
+                details = "LIVE";
+            }
+
             DutyBlock blk = new DutyBlock(id, type, startHour, endHour, label, pickups, drops, veh, details);
             driver.addBlock(blk);
-            if ("BREAK".equalsIgnoreCase(type)) {
-                driver.setStatus("On Break");
-            }
             dataStore.saveDriver(driver);
             CorsHelper.sendJsonResponse(exchange, 201, JsonUtil.toJson(driver));
         } else {

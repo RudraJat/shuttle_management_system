@@ -176,7 +176,6 @@ public class BookingHandler implements HttpHandler {
         if (map.containsKey("toLocation")) existing.setToLocation(String.valueOf(map.get("toLocation")));
         if (map.containsKey("vehicleNumber")) existing.setVehicleNumber(String.valueOf(map.get("vehicleNumber")));
         if (map.containsKey("vehicleDetails")) existing.setVehicleDetails(String.valueOf(map.get("vehicleDetails")));
-        if (map.containsKey("requestedPickupTime")) existing.setRequestedPickupTime(String.valueOf(map.get("requestedPickupTime")));
         if (map.containsKey("pickupTime")) existing.setPickupTime(String.valueOf(map.get("pickupTime")));
         if (map.containsKey("plannedDropTime")) existing.setPlannedDropTime(String.valueOf(map.get("plannedDropTime")));
         if (map.containsKey("actualDropTime")) existing.setActualDropTime(String.valueOf(map.get("actualDropTime")));

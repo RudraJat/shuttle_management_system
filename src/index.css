@@ -462,6 +462,11 @@ input, select, textarea {
   box-shadow: var(--shadow-sm);
   margin-bottom: 24px;
   overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.timeline-duty-icon {
+  flex-shrink: 0;
 }
 
 .card-header-bar {

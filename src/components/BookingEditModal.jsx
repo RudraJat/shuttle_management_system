@@ -16,6 +16,7 @@ const ALL_STATUSES = [
 
 const FLEET_VEHICLES = [
   { number: 'NB-002-RF', details: 'UA3282 White Bus | 12 Seater' },
+  { number: 'NB-003-RF', details: 'UA3282 White Bus | 12 Seater' },
   { number: 'DL-04-AB-1290', details: 'Shuttle Van B4 | 8 Seater' },
   { number: 'KA-05-MN-9921', details: 'Campus Cruiser 7 | 15 Seater' },
   { number: 'MH-12-PQ-4412', details: 'Green Electric MiniBus | 16 Seater' },
@@ -41,9 +42,7 @@ export const BookingEditModal = ({
   const [vehicleDetails, setVehicleDetails] = useState(booking.vehicleDetails || 'UA3282 White Bus | 12 Seater');
   const [requestedPickupTime, setRequestedPickupTime] = useState(booking.requestedPickupTime || '11:00');
   const [plannedDropTime, setPlannedDropTime] = useState(booking.plannedDropTime || '11:15');
-  const [pickupTime, setPickupTime] = useState(booking.pickupTime || '-');
-  const [actualDropTime, setActualDropTime] = useState(booking.actualDropTime || '-');
-  const [driverName, setDriverName] = useState(booking.driverName || 'Steve Smith');
+  const [driverName, setDriverName] = useState(booking.driverName || 'Unassigned');
   const [driverPhone, setDriverPhone] = useState(booking.driverPhone || '+1-322-493-3292');
   const [delayMinutes, setDelayMinutes] = useState(booking.delayMinutes || 0);
   const [notes, setNotes] = useState(booking.notes || '');
@@ -61,9 +60,7 @@ export const BookingEditModal = ({
       setVehicleDetails(booking.vehicleDetails || 'UA3282 White Bus | 12 Seater');
       setRequestedPickupTime(booking.requestedPickupTime || '11:00');
       setPlannedDropTime(booking.plannedDropTime || '11:15');
-      setPickupTime(booking.pickupTime || '-');
-      setActualDropTime(booking.actualDropTime || '-');
-      setDriverName(booking.driverName || 'Steve Smith');
+      setDriverName(booking.driverName || 'Unassigned');
       setDriverPhone(booking.driverPhone || '+1-322-493-3292');
       setDelayMinutes(booking.delayMinutes || 0);
       setNotes(booking.notes || '');
@@ -74,6 +71,14 @@ export const BookingEditModal = ({
     setVehicleNumber(vNum);
     const found = FLEET_VEHICLES.find((v) => v.number === vNum);
     if (found) setVehicleDetails(found.details);
+    const assignedDriver = drivers.find((driver) => driver.vehicleNumber === vNum);
+    if (assignedDriver) {
+      setDriverName(assignedDriver.name);
+      setDriverPhone(assignedDriver.phone);
+    } else if (vNum === '-') {
+      setDriverName('Unassigned');
+      setDriverPhone('-');
+    }
   };
 
   const handleDriverChange = (dName) => {
@@ -81,6 +86,11 @@ export const BookingEditModal = ({
     const found = drivers.find((d) => d.name === dName);
     if (found) {
       setDriverPhone(found.phone);
+      handleVehicleChange(found.vehicleNumber);
+    } else {
+      setVehicleNumber('-');
+      setVehicleDetails('Unassigned / Capacity Full');
+      setDriverPhone('-');
     }
   };
 
@@ -97,8 +107,6 @@ export const BookingEditModal = ({
       vehicleDetails,
       requestedPickupTime,
       plannedDropTime,
-      pickupTime,
-      actualDropTime,
       driverName,
       driverPhone,
       delayMinutes: Number(delayMinutes) || 0,
@@ -219,7 +227,7 @@ export const BookingEditModal = ({
             </div>
 
             {/* Transit Times */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <div className="form-group">
                 <label style={{ fontSize: '0.72rem' }}>Requested Pickup</label>
                 <input
@@ -227,18 +235,8 @@ export const BookingEditModal = ({
                   required
                   className="form-control"
                   value={requestedPickupTime}
-                  onChange={(e) => setRequestedPickupTime(e.target.value)}
-                />
-              </div>
-
-              <div className="form-group">
-                <label style={{ fontSize: '0.72rem' }}>Actual Pickup</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 11:25 or -"
-                  className="form-control"
-                  value={pickupTime}
-                  onChange={(e) => setPickupTime(e.target.value)}
+                  readOnly
+                  title="Pickup time is set by the commuter and cannot be changed by admin"
                 />
               </div>
 
@@ -253,20 +251,10 @@ export const BookingEditModal = ({
                 />
               </div>
 
-              <div className="form-group">
-                <label style={{ fontSize: '0.72rem' }}>Actual Drop</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 11:32 or -"
-                  className="form-control"
-                  value={actualDropTime}
-                  onChange={(e) => setActualDropTime(e.target.value)}
-                />
-              </div>
             </div>
 
             {/* Vehicle & Driver Reassignment */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '9px' }}>
               <div className="form-group">
                 <label>Assigned Shuttle Vehicle</label>
                 <select
@@ -291,7 +279,7 @@ export const BookingEditModal = ({
                 >
                   {drivers.map((d) => (
                     <option key={d.id} value={d.name}>
-                      {d.name} ({d.status} | {d.vehicleNumber})
+                      {d.name} ({d.status})
                     </option>
                   ))}
                   <option value="Unassigned">Unassigned</option>

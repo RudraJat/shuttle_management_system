@@ -71,13 +71,13 @@ public class DataStore {
 
     private void seedInitialData() {
         // --- 1. Drivers & Timeline Schedules matching Screenshot page 12 ---
-        Driver d1 = new Driver("drv-1", "Samuel Jones", "+1-415-555-0101", "Online", 4.8, "NB-002-RF", "UA3282 White Bus | 12 Seater", 6.0, 20.0);
-        d1.addBlock(new DutyBlock("blk-1-1", "DUTY_START", 6.0, 7.0, "Start Duty", 0, 0, "NB-002-RF", "Shift Start"));
-        d1.addBlock(new DutyBlock("blk-1-2", "TRIP", 8.0, 12.0, "2 Pickup 3 Drop", 2, 3, "NB-002-RF", "Library to Data Centre"));
-        d1.addBlock(new DutyBlock("blk-1-3", "BREAK", 13.0, 14.5, "Lunch Break", 0, 0, "NB-002-RF", "Designated Canteen Rest"));
-        d1.addBlock(new DutyBlock("blk-1-4", "EMPTY_LEG", 15.0, 16.0, "Empty Leg", 0, 0, "NB-002-RF", "Depot Relocation"));
-        d1.addBlock(new DutyBlock("blk-1-5", "TRIP", 16.0, 19.0, "4 Pickup 4 Drop", 4, 4, "NB-002-RF", "Hostel to Main Gate"));
-        d1.addBlock(new DutyBlock("blk-1-6", "DUTY_END", 19.5, 20.0, "Duty End", 0, 0, "NB-002-RF", "Clock Out"));
+        Driver d1 = new Driver("drv-1", "Samuel Jones", "+1-415-555-0101", "Online", 4.8, "NB-003-RF", "UA3282 White Bus | 12 Seater", 6.0, 20.0);
+        d1.addBlock(new DutyBlock("blk-1-1", "DUTY_START", 6.0, 7.0, "Start Duty", 0, 0, "NB-003-RF", "Shift Start"));
+        d1.addBlock(new DutyBlock("blk-1-2", "TRIP", 8.0, 12.0, "2 Pickup 3 Drop", 2, 3, "NB-003-RF", "Library to Data Centre"));
+        d1.addBlock(new DutyBlock("blk-1-3", "BREAK", 13.0, 14.5, "Lunch Break", 0, 0, "NB-003-RF", "Designated Canteen Rest"));
+        d1.addBlock(new DutyBlock("blk-1-4", "EMPTY_LEG", 15.0, 16.0, "Empty Leg", 0, 0, "NB-003-RF", "Depot Relocation"));
+        d1.addBlock(new DutyBlock("blk-1-5", "TRIP", 16.0, 19.0, "4 Pickup 4 Drop", 4, 4, "NB-003-RF", "Hostel to Main Gate"));
+        d1.addBlock(new DutyBlock("blk-1-6", "DUTY_END", 19.5, 20.0, "Duty End", 0, 0, "NB-003-RF", "Clock Out"));
         drivers.put(d1.getId(), d1);
 
         Driver d2 = new Driver("drv-2", "Bob Jones", "+1-415-555-0102", "Offline", 4.6, "DL-04-AB-1290", "Shuttle Van B4 | 8 Seater", 7.0, 19.0);
@@ -245,6 +245,9 @@ public class DataStore {
                 "09:02", "09:05", "06:02", "06:05", "Dec 16, 2024",
                 "Samuel Jones", "+1-415-555-0101", 4.8,
                 "Official guest transit", 0));
+
+        // Booking Management starts empty and receives only commuter-created bookings.
+        bookings.clear();
 
         // --- 3. Seed Campus Routes ---
         routes.put("rt-1", new CampusRoute("rt-1", "Central Campus Express", "CCE-01",

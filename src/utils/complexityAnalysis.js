@@ -14,7 +14,7 @@ export const COMPLEXITY_ANALYSIS = [
     scalingRecommendation: 'Virtualize driver rows if D > 200 using windowing. For hourly blocks, CSS subgrid keeps layout overhead at O(1) in browser compositor.',
   },
   {
-    module: 'Booking Management Table',
+    module: ' Table',
     operation: 'Multi-criteria search, filtering (Emp ID, Status, Date) & pagination',
     algorithm: 'In-memory inverted index filter with single-pass evaluation',
     timeComplexity: 'O(N) search where N = active bookings; O(P) pagination slicing where P = page size (10)',

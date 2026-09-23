@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Search, Calendar, MoreVertical, Play, Square, Coffee } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Search, MoreVertical, Play, Square, Coffee, Wifi, WifiOff } from 'lucide-react';
 
 const HOURS = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
 const START_HOUR = 6;
@@ -7,13 +7,29 @@ const TOTAL_HOURS = 16; // 22 - 6
 
 export const DriverTimeline = ({
   drivers,
-  selectedDate,
+  bookings = [],
+  selectedDate = '',
   onDutyAction,
+  onOpenDutyModal,
+  onStatusToggle,
   onOpenBreakModal,
   onSelectBlock,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeMenuDriverId, setActiveMenuDriverId] = useState(null);
+  const [currentHour, setCurrentHour] = useState(() => {
+    const now = new Date();
+    return now.getHours() + now.getMinutes() / 60;
+  });
+
+  useEffect(() => {
+    const updateClock = () => {
+      const now = new Date();
+      setCurrentHour(now.getHours() + now.getMinutes() / 60);
+    };
+    const timer = setInterval(updateClock, 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   const filteredDrivers = drivers.filter((d) =>
     d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -29,6 +45,52 @@ export const DriverTimeline = ({
     const s = Math.max(START_HOUR, Math.min(22, start));
     const e = Math.max(START_HOUR, Math.min(22, end));
     return Math.max(2.5, ((e - s) / TOTAL_HOURS) * 100);
+  };
+
+  const timeToHour = (value) => {
+    if (!value || value === '-') return null;
+    const match = String(value).match(/^(\d{1,2}):(\d{2})/);
+    if (!match) return null;
+    return Number(match[1]) + Number(match[2]) / 60;
+  };
+
+  const getTimelineBlocks = (driver) => {
+    const scheduleBlocks = (driver.blocks || []).filter((block) =>
+      block.details === 'LIVE' && ['BREAK', 'DUTY_START', 'DUTY_END'].includes(block.type)
+    );
+    const assignedBookingBlocks = bookings
+      .filter((booking) =>
+        booking.driverName === driver.name &&
+        (!selectedDate || booking.date === selectedDate) &&
+        ['Accepted', 'Waiting', 'Requested', 'On Going'].includes(booking.status)
+      )
+      .map((booking) => {
+        const startHour = timeToHour(booking.requestedPickupTime);
+        const endHour = timeToHour(booking.plannedDropTime);
+        if (startHour === null || endHour === null || endHour <= startHour) return null;
+        return {
+          id: `booking-${booking.id}`,
+          type: 'TRIP',
+          startHour,
+          endHour,
+          label: `${booking.fromLocation} -> ${booking.toLocation}`,
+          details: `Booking #${booking.id} | ${booking.employeeName}`,
+        };
+      })
+      .filter(Boolean);
+
+    return [...scheduleBlocks, ...assignedBookingBlocks];
+  };
+
+  const getDisplayStatus = (driver) => {
+    const activeBreak = (driver.blocks || []).find((block) =>
+      block.details === 'LIVE' &&
+      block.type === 'BREAK' &&
+      currentHour >= block.startHour &&
+      currentHour < block.endHour
+    );
+    if (activeBreak) return 'On Break';
+    return driver.status === 'On Break' ? 'Online' : driver.status;
   };
 
   return (
@@ -48,10 +110,6 @@ export const DriverTimeline = ({
           </div>
         </div>
 
-        <div className="date-badge-box">
-          <Calendar size={15} color="var(--brand-primary)" />
-          <span>{selectedDate}</span>
-        </div>
       </div>
 
       {/* Timeline Viewport */}
@@ -76,6 +134,7 @@ export const DriverTimeline = ({
         ) : (
           filteredDrivers.map((driver) => {
             const isMenuOpen = activeMenuDriverId === driver.id;
+            const displayStatus = getDisplayStatus(driver);
 
             return (
               <div key={driver.id} className="timeline-driver-row">
@@ -84,8 +143,8 @@ export const DriverTimeline = ({
                   <div className="driver-info-block">
                     <div className="driver-name">{driver.name}</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span className={`driver-status-chip ${driver.status.toLowerCase().replace(' ', '')}`}>
-                        {driver.status}
+                      <span className={`driver-status-chip ${displayStatus.toLowerCase().replace(' ', '')}`}>
+                        {displayStatus}
                       </span>
                       <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                         {driver.vehicleNumber}
@@ -128,7 +187,20 @@ export const DriverTimeline = ({
                           className="nav-tab-btn"
                           style={{ width: '100%', justifyContent: 'flex-start', padding: '6px 10px', fontSize: '0.8rem' }}
                           onClick={() => {
-                            onDutyAction(driver.id, 'START_DUTY');
+                            onStatusToggle(driver.id, driver.status === 'Online' ? 'Offline' : 'Online');
+                            setActiveMenuDriverId(null);
+                          }}
+                        >
+                          {driver.status === 'Online' ? <WifiOff size={14} color="#ef4444" /> : <Wifi size={14} color="#10b981" />}
+                          <span>{driver.status === 'Online' ? 'Set Offline' : 'Set Online'}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          className="nav-tab-btn"
+                          style={{ width: '100%', justifyContent: 'flex-start', padding: '6px 10px', fontSize: '0.8rem' }}
+                          onClick={() => {
+                            onOpenDutyModal(driver, 'START_DUTY');
                             setActiveMenuDriverId(null);
                           }}
                         >
@@ -141,7 +213,7 @@ export const DriverTimeline = ({
                           className="nav-tab-btn"
                           style={{ width: '100%', justifyContent: 'flex-start', padding: '6px 10px', fontSize: '0.8rem' }}
                           onClick={() => {
-                            onDutyAction(driver.id, 'END_DUTY');
+                            onOpenDutyModal(driver, 'END_DUTY');
                             setActiveMenuDriverId(null);
                           }}
                         >
@@ -168,9 +240,12 @@ export const DriverTimeline = ({
 
                 {/* Timeline Grid Track */}
                 <div className="timeline-grid-track">
-                  {driver.blocks.map((block) => {
+                  {getTimelineBlocks(driver).map((block) => {
                     const leftPct = getOffsetPct(block.startHour);
-                    const widthPct = getWidthPct(block.startHour, block.endHour);
+                    const baseWidthPct = getWidthPct(block.startHour, block.endHour);
+                    const widthPct = ['DUTY_START', 'DUTY_END'].includes(block.type)
+                      ? Math.max(baseWidthPct, 5)
+                      : baseWidthPct;
 
                     let typeClass = 'type-trip';
                     if (block.type === 'BREAK') typeClass = 'type-break';
@@ -190,8 +265,6 @@ export const DriverTimeline = ({
                         title={`${block.label} (${block.startHour}:00 - ${block.endHour}:00) - ${block.details || ''}`}
                         onClick={() => onSelectBlock && onSelectBlock(driver, block)}
                       >
-                        {block.type === 'DUTY_START' && <Play size={11} style={{ marginRight: '4px' }} />}
-                        {block.type === 'DUTY_END' && <Square size={11} style={{ marginRight: '4px' }} />}
                         {block.type === 'BREAK' && <Coffee size={11} style={{ marginRight: '4px' }} />}
                         <span>{block.label}</span>
                       </div>
@@ -204,16 +277,13 @@ export const DriverTimeline = ({
         )}
       </div>
 
-      {/* Legend matching Screenshot page 12 */}
+      {/* Legend for the schedule blocks shown above */}
       <div className="timeline-legend">
         <div className="legend-item">
           <div className="legend-swatch" style={{ background: 'var(--brand-navy)' }} />
-          <span>Duty Start</span>
+          <span>Duty Start/Duty End</span>
         </div>
-        <div className="legend-item">
-          <div className="legend-swatch" style={{ background: 'var(--brand-navy)' }} />
-          <span>Duty End</span>
-        </div>
+       
         <div className="legend-item">
           <div className="legend-swatch" style={{ background: 'var(--timeline-trip-bg)', border: '1px solid var(--timeline-trip-border)' }} />
           <span>Pickup / Drop</span>
@@ -221,14 +291,6 @@ export const DriverTimeline = ({
         <div className="legend-item">
           <div className="legend-swatch" style={{ background: 'var(--timeline-break-bg)', border: '1px solid var(--timeline-break-border)' }} />
           <span>Break</span>
-        </div>
-        <div className="legend-item">
-          <div className="legend-swatch" style={{ background: 'var(--timeline-veh-bg)', border: '1px solid var(--timeline-veh-border)' }} />
-          <span>Vehicle Change</span>
-        </div>
-        <div className="legend-item">
-          <div className="legend-swatch" style={{ background: 'var(--timeline-empty-bg)', border: '1px dashed var(--timeline-empty-border)' }} />
-          <span>Empty Leg</span>
         </div>
       </div>
     </section>

@@ -69,6 +69,16 @@ export const api = {
     return res.json();
   },
 
+  async updateDriver(driverId, driver) {
+    const res = await fetch(`${API_BASE}/drivers/${driverId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(driver),
+    });
+    if (!res.ok) throw new Error('Failed to update driver');
+    return res.json();
+  },
+
   async updateDriverDuty(driverId, action, hour) {
     const res = await fetch(`${API_BASE}/drivers/${driverId}/duty`, {
       method: 'POST',

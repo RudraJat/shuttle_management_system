@@ -16,6 +16,7 @@ const CAMPUS_STOPS = [
 
 export const NewBookingModal = ({
   isOpen,
+  bookingDate,
   onClose,
   onCreate,
 }) => {
@@ -45,7 +46,7 @@ export const NewBookingModal = ({
       driverName: 'Steve Smith',
       driverPhone: '+1-322-493-3292',
       driverRating: 4.5,
-      date: 'Dec 16, 2024',
+      date: bookingDate || new Date().toISOString().slice(0, 10),
       pickupTime: '-',
       actualDropTime: '-',
       delayMinutes: 0,
