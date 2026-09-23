@@ -74,7 +74,7 @@ export const DriverTimeline = ({
           type: 'TRIP',
           startHour,
           endHour,
-          label: `${booking.fromLocation} -> ${booking.toLocation}`,
+          label: "Fill",
           details: `Booking #${booking.id} | ${booking.employeeName}`,
         };
       })
