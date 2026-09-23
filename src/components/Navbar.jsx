@@ -105,14 +105,14 @@ export const Navbar = ({
           </button>
 
           {/* Theme Toggle Button */}
-          {activeTab !== 'commuter' && <button
+          <button
             type="button"
             className="btn-icon"
             title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
             onClick={toggleTheme}
           >
             {theme === 'light' ? <Moon size={17} /> : <Sun size={17} />}
-          </button>}
+          </button>
 
           {/* Mobile Navigation Toggle Button */}
           <button

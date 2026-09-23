@@ -44,7 +44,11 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(booking),
     });
-    if (!res.ok) throw new Error('Failed to update booking');
+    if (!res.ok) {
+      const error = new Error('Failed to update booking');
+      error.status = res.status;
+      throw error;
+    }
     return res.json();
   },
 
@@ -54,13 +58,21 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status, notes }),
     });
-    if (!res.ok) throw new Error('Failed to update status');
+    if (!res.ok) {
+      const error = new Error('Failed to update status');
+      error.status = res.status;
+      throw error;
+    }
     return res.json();
   },
 
   async deleteBooking(id) {
     const res = await fetch(`${API_BASE}/bookings/${id}`, { method: 'DELETE' });
-    if (!res.ok) throw new Error('Failed to delete booking');
+    if (!res.ok) {
+      const error = new Error('Failed to delete booking');
+      error.status = res.status;
+      throw error;
+    }
   },
 
   async getDrivers() {

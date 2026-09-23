@@ -66,8 +66,9 @@ export const DriverTimeline = ({
       )
       .map((booking) => {
         const startHour = timeToHour(booking.requestedPickupTime);
-        const endHour = timeToHour(booking.plannedDropTime);
-        if (startHour === null || endHour === null || endHour <= startHour) return null;
+        let endHour = timeToHour(booking.plannedDropTime);
+        if (startHour === null || endHour === null) return null;
+        if (endHour <= startHour) endHour = startHour + 0.25;
         return {
           id: `booking-${booking.id}`,
           type: 'TRIP',

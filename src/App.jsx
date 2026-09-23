@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Navbar } from './components/Navbar.jsx';
 import { DriverTimeline } from './components/DriverTimeline.jsx';
 import { BookingManagementTable } from './components/BookingManagementTable.jsx';
@@ -43,6 +43,7 @@ export const App = () => {
     }
     return storedBookings;
   });
+  const bookingsRef = useRef(bookings);
   const [drivers, setDrivers] = useState(() =>
     getStoredData('drivers', INITIAL_DRIVERS).map((driver) => (
       driver.id === 'drv-1'
@@ -89,6 +90,7 @@ export const App = () => {
 
   // Sync state to LocalStorage
   useEffect(() => {
+    bookingsRef.current = bookings;
     setStoredData('bookings', bookings);
   }, [bookings]);
 
@@ -117,8 +119,10 @@ export const App = () => {
           api.getRoutes(),
           api.getAnalytics(),
         ]);
-        // Do not erase locally cached rides when the in-memory backend is empty or restarting.
-        if (Array.isArray(bList) && bList.length > 0) setBookings(bList);
+        // Only hydrate an empty browser store; never replace visible rides during backend polling.
+        if (Array.isArray(bList) && bList.length > 0 && bookingsRef.current.length === 0) {
+          setBookings(bList);
+        }
         if (dList && dList.length > 0) setDrivers(dList);
         if (rList && rList.length > 0) setRoutes(rList);
         if (aData) setAnalytics(aData);
@@ -143,9 +147,17 @@ export const App = () => {
         return;
       }
       if (isBackendConnected) {
-        const updated = await api.updateBookingStatus(id, status, notes);
-        setBookings((prev) => prev.map((b) => (b.id === id ? updated : b)));
-        if (selectedBooking && selectedBooking.id === id) setSelectedBooking(updated);
+        try {
+          const updated = await api.updateBookingStatus(id, status, notes);
+          setBookings((prev) => prev.map((b) => (b.id === id ? updated : b)));
+          if (selectedBooking && selectedBooking.id === id) setSelectedBooking(updated);
+        } catch (err) {
+          if (err.status !== 404) throw err;
+          setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, status, notes: notes || b.notes } : b)));
+          if (selectedBooking && selectedBooking.id === id) {
+            setSelectedBooking({ ...selectedBooking, status, notes: notes || selectedBooking.notes });
+          }
+        }
       } else {
         setBookings((prev) =>
           prev.map((b) => (b.id === id ? { ...b, status, notes: notes || b.notes } : b))
@@ -190,9 +202,17 @@ export const App = () => {
     }
     try {
       if (isBackendConnected) {
-        const updated = await api.updateBooking(id, updatedData);
-        setBookings((prev) => prev.map((b) => (b.id === id ? updated : b)));
-        if (selectedBooking && selectedBooking.id === id) setSelectedBooking(updated);
+        try {
+          const updated = await api.updateBooking(id, updatedData);
+          setBookings((prev) => prev.map((b) => (b.id === id ? updated : b)));
+          if (selectedBooking && selectedBooking.id === id) setSelectedBooking(updated);
+        } catch (err) {
+          if (err.status !== 404) throw err;
+          setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, ...updatedData } : b)));
+          if (selectedBooking && selectedBooking.id === id) {
+            setSelectedBooking({ ...selectedBooking, ...updatedData });
+          }
+        }
       } else {
         setBookings((prev) =>
           prev.map((b) => (b.id === id ? { ...b, ...updatedData } : b))
@@ -212,7 +232,11 @@ export const App = () => {
   const handleDeleteBooking = async (id) => {
     try {
       if (isBackendConnected) {
-        await api.deleteBooking(id);
+        try {
+          await api.deleteBooking(id);
+        } catch (err) {
+          if (err.status !== 404) throw err;
+        }
       }
       setBookings((prev) => prev.filter((b) => b.id !== id));
       if (selectedBooking && selectedBooking.id === id) setSelectedBooking(null);

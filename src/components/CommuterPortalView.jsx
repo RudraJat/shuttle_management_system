@@ -53,8 +53,10 @@ export const CommuterPortalView = ({
     const now = new Date();
     const nowHours = String(now.getHours()).padStart(2, '0');
     const nowMins = String(now.getMinutes()).padStart(2, '0');
-    const dropMins = String((now.getMinutes() + 14) % 60).padStart(2, '0');
-    const dropHours = String(now.getHours() + (now.getMinutes() + 14 >= 60 ? 1 : 0)).padStart(2, '0');
+    const [pickupHour, pickupMinute] = (requestedTime || `${nowHours}:${nowMins}`).split(':').map(Number);
+    const dropTotalMinutes = pickupHour * 60 + pickupMinute + 14;
+    const dropMins = String(dropTotalMinutes % 60).padStart(2, '0');
+    const dropHours = String(Math.floor(dropTotalMinutes / 60) % 24).padStart(2, '0');
 
     const newBooking = {
       id: newBookingId,
