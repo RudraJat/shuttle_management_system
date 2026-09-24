@@ -1,4 +1,4 @@
-export function createRectCache(element: HTMLElement | SVGElement) {
+export function createRectCache(element) {
   let rect = element.getBoundingClientRect();
   const update = () => {
     rect = element.getBoundingClientRect();

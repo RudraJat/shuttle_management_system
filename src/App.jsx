@@ -44,17 +44,23 @@ export const App = () => {
     return storedBookings;
   });
   const bookingsRef = useRef(bookings);
-  const [drivers, setDrivers] = useState(() =>
-    getStoredData('drivers', INITIAL_DRIVERS).map((driver) => (
-      driver.id === 'drv-1'
-        ? {
-            ...driver,
-            vehicleNumber: 'NB-003-RF',
-            blocks: driver.blocks.map((block) => ({ ...block, vehicleNumber: 'NB-003-RF' })),
-          }
-        : driver
-    ))
-  );
+  const [drivers, setDrivers] = useState(() => {
+    const driverDataVersion = 'drivers-v5-clean-duty-breaks';
+    const storedDrivers = getStoredData('drivers', INITIAL_DRIVERS);
+    if (localStorage.getItem('driverDataVersion') !== driverDataVersion) {
+      const cleanedDrivers = storedDrivers.map((driver) => ({
+        ...driver,
+        vehicleNumber: driver.id === 'drv-1' ? 'NB-003-RF' : driver.vehicleNumber,
+        blocks: (driver.blocks || []).filter(
+          (block) => block.type === 'DUTY_START' || block.type === 'DUTY_END'
+        ),
+      }));
+      setStoredData('drivers', cleanedDrivers);
+      localStorage.setItem('driverDataVersion', driverDataVersion);
+      return cleanedDrivers;
+    }
+    return storedDrivers;
+  });
   const [routes, setRoutes] = useState(() => getStoredData('routes', INITIAL_ROUTES));
   const [shuttles, setShuttles] = useState(() => getStoredData('shuttles', INITIAL_LIVE_SHUTTLES));
   const [analytics, setAnalytics] = useState(null);
@@ -264,31 +270,65 @@ export const App = () => {
     }
   };
 
-  // Driver Duty Actions
-  const handleDutyAction = async (driverId, action, scheduledHour) => {
+  // Driver Duty Actions with boundary & collision enforcement
+  const handleDutyAction = async (driverId, action, scheduledHour, endHourParam) => {
     try {
       const targetDriver = drivers.find((d) => d.id === driverId);
-      const hour = Number(scheduledHour) || (action === 'START_DUTY' ? 8.0 : 18.0);
+      if (!targetDriver) return;
+
+      const currentStart = Number(targetDriver.startDutyHour ?? targetDriver.dutyStartHour ?? 8.0);
+      const currentEnd = Number(targetDriver.endDutyHour ?? targetDriver.dutyEndHour ?? 18.0);
+
+      let newStart = currentStart;
+      let newEnd = currentEnd;
+
+      if (action === 'START_DUTY') {
+        newStart = Number(scheduledHour);
+      } else if (action === 'END_DUTY') {
+        newEnd = Number(endHourParam !== undefined ? endHourParam : scheduledHour);
+      } else if (action === 'SET_SHIFT') {
+        newStart = Number(scheduledHour);
+        newEnd = Number(endHourParam);
+      }
+
+      if (newEnd <= newStart) {
+        addToast('error', `Duty end (${newEnd}:00) cannot be before or equal to duty start (${newStart}:00)!`);
+        return;
+      }
 
       if (isBackendConnected) {
-        const updated = await api.updateDriverDuty(driverId, action, hour);
-        setDrivers((prev) => prev.map((d) => (d.id === driverId ? updated : d)));
-      } else if (targetDriver) {
+        const updated = await api.updateDriverDuty(driverId, action, action === 'START_DUTY' ? newStart : newEnd);
+        setDrivers((prev) => prev.map((d) => (d.id === driverId ? { ...d, ...updated, startDutyHour: newStart, endDutyHour: newEnd } : d)));
+      } else {
         setDrivers((prev) =>
           prev.map((d) =>
             d.id === driverId
               ? {
                   ...d,
-                  status: action === 'START_DUTY' ? 'Online' : 'Offline',
+                  status: action === 'START_DUTY' ? 'Online' : action === 'END_DUTY' ? 'Offline' : d.status,
+                  startDutyHour: newStart,
+                  dutyStartHour: newStart,
+                  endDutyHour: newEnd,
+                  dutyEndHour: newEnd,
                   blocks: [
-                    ...(d.blocks || []).filter((block) => block.details !== 'LIVE' || block.type !== action),
+                    ...(d.blocks || []).filter((block) => block.type !== 'DUTY_START' && block.type !== 'DUTY_END'),
                     {
-                      id: `live-${action.toLowerCase()}-${Date.now()}`,
-                      type: action,
-                      startHour: action === 'START_DUTY' ? hour : hour - 0.5,
-                      endHour: action === 'START_DUTY' ? hour + 0.5 : hour,
-                      label: action === 'START_DUTY' ? 'Start Duty' : 'End Duty',
+                      id: `duty-start-${d.id}-${Date.now()}`,
+                      type: 'DUTY_START',
+                      startHour: newStart,
+                      endHour: Math.min(newStart + 0.5, newEnd),
+                      label: 'Duty Start',
                       details: 'LIVE',
+                      vehicleNumber: d.vehicleNumber,
+                    },
+                    {
+                      id: `duty-end-${d.id}-${Date.now()}`,
+                      type: 'DUTY_END',
+                      startHour: Math.max(newEnd - 0.5, newStart),
+                      endHour: newEnd,
+                      label: 'Duty End',
+                      details: 'LIVE',
+                      vehicleNumber: d.vehicleNumber,
                     },
                   ],
                 }
@@ -297,8 +337,8 @@ export const App = () => {
         );
       }
       addToast(
-        'info',
-        `${targetDriver?.name || 'Driver'} duty updated: ${action === 'START_DUTY' ? 'Online' : 'Shift Ended'}`
+        'success',
+        `${targetDriver.name} shift updated to ${newStart}:00 - ${newEnd}:00 (${action === 'START_DUTY' ? 'Clocked In' : action === 'END_DUTY' ? 'Clocked Out' : 'Shift Set'})`
       );
     } catch (err) {
       addToast('error', `Duty change failed: ${err.message}`);
@@ -333,14 +373,16 @@ export const App = () => {
               ? {
                   ...d,
                   blocks: [
-                    ...(d.blocks || []).filter((block) => block.details !== 'LIVE' || block.type !== 'BREAK'),
+                    ...(d.blocks || []).filter(
+                      (block) => !(block.type === 'BREAK' && block.startHour === startHour && block.endHour === endHour)
+                    ),
                     {
                       id: `blk-${Date.now()}`,
                       type: 'BREAK',
                       startHour,
                       endHour,
-                      label,
-                      details: 'LIVE',
+                      label: label || 'Break',
+                      details: 'Added Break',
                       pickups: 0,
                       drops: 0,
                       vehicleNumber: d.vehicleNumber,
@@ -474,6 +516,7 @@ export const App = () => {
       <DriverDutyModal
         driver={dutyDriver}
         mode={dutyMode}
+        bookings={bookings}
         onClose={() => setDutyDriver(null)}
         onAddBreak={handleAddBreak}
         onDutyAction={handleDutyAction}
@@ -483,6 +526,8 @@ export const App = () => {
       <NewBookingModal
         isOpen={isNewBookingOpen}
         bookingDate={selectedDate}
+        drivers={drivers}
+        bookings={bookings}
         onClose={() => setIsNewBookingOpen(false)}
         onCreate={handleCreateBooking}
       />

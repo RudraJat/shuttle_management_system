@@ -98,20 +98,34 @@ public class DriverHandler implements HttpHandler {
             double hour = getDouble(map, "hour", 8.0);
 
             if ("START_DUTY".equalsIgnoreCase(action)) {
+                if (hour >= driver.getDutyEndHour()) {
+                    CorsHelper.sendJsonResponse(exchange, 400, "{\"error\":\"Duty start (" + hour + ":00) cannot be after or equal to duty end (" + driver.getDutyEndHour() + ":00)\"}");
+                    return;
+                }
                 driver.setStatus("Online");
                 driver.setDutyStartHour(hour);
                 driver.getBlocks().removeIf(block -> "LIVE".equals(block.getDetails()) && "DUTY_START".equals(block.getType()));
                 driver.addBlock(new DutyBlock("blk-" + UUID.randomUUID().toString().substring(0, 6),
                     "DUTY_START", hour, hour + 0.5, "Start Duty", 0, 0, driver.getVehicleNumber(), "LIVE"));
             } else if ("END_DUTY".equalsIgnoreCase(action)) {
+                if (hour <= driver.getDutyStartHour()) {
+                    CorsHelper.sendJsonResponse(exchange, 400, "{\"error\":\"Duty end (" + hour + ":00) cannot be before or equal to duty start (" + driver.getDutyStartHour() + ":00)\"}");
+                    return;
+                }
                 driver.setStatus("Offline");
                 driver.setDutyEndHour(hour);
                 driver.getBlocks().removeIf(block -> "LIVE".equals(block.getDetails()) && "DUTY_END".equals(block.getType()));
                 driver.addBlock(new DutyBlock("blk-" + UUID.randomUUID().toString().substring(0, 6),
                     "DUTY_END", hour - 0.5, hour, "End Duty", 0, 0, driver.getVehicleNumber(), "LIVE"));
             } else {
-                if (map.containsKey("startHour")) driver.setDutyStartHour(getDouble(map, "startHour", driver.getDutyStartHour()));
-                if (map.containsKey("endHour")) driver.setDutyEndHour(getDouble(map, "endHour", driver.getDutyEndHour()));
+                double newStart = map.containsKey("startHour") ? getDouble(map, "startHour", driver.getDutyStartHour()) : driver.getDutyStartHour();
+                double newEnd = map.containsKey("endHour") ? getDouble(map, "endHour", driver.getDutyEndHour()) : driver.getDutyEndHour();
+                if (newEnd <= newStart) {
+                    CorsHelper.sendJsonResponse(exchange, 400, "{\"error\":\"Duty end must be strictly after duty start\"}");
+                    return;
+                }
+                driver.setDutyStartHour(newStart);
+                driver.setDutyEndHour(newEnd);
                 if (map.containsKey("status")) driver.setStatus(String.valueOf(map.get("status")));
             }
 

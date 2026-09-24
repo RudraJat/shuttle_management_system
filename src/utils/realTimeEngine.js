@@ -38,12 +38,8 @@ export const INITIAL_DRIVERS = [
     startDutyHour: 6.0,
     endDutyHour: 20.0,
     blocks: [
-      { id: 'blk-1-1', type: 'DUTY_START', startHour: 6.0, endHour: 7.0, label: 'Start Duty', pickups: 0, drops: 0, vehicleNumber: 'NB-003-RF', notes: 'Shift Start' },
-      { id: 'blk-1-2', type: 'TRIP', startHour: 8.0, endHour: 12.0, label: '2 Pickup 3 Drop', pickups: 2, drops: 3, vehicleNumber: 'NB-003-RF', notes: 'Library to Data Centre' },
-      { id: 'blk-1-3', type: 'BREAK', startHour: 13.0, endHour: 14.5, label: 'Lunch Break', pickups: 0, drops: 0, vehicleNumber: 'NB-003-RF', notes: 'Designated Canteen Rest' },
-      { id: 'blk-1-4', type: 'EMPTY_LEG', startHour: 15.0, endHour: 16.0, label: 'Empty Leg', pickups: 0, drops: 0, vehicleNumber: 'NB-003-RF', notes: 'Depot Relocation' },
-      { id: 'blk-1-5', type: 'TRIP', startHour: 16.0, endHour: 19.0, label: '4 Pickup 4 Drop', pickups: 4, drops: 4, vehicleNumber: 'NB-003-RF', notes: 'Hostel to Main Gate' },
-      { id: 'blk-1-6', type: 'DUTY_END', startHour: 19.5, endHour: 20.0, label: 'Duty End', pickups: 0, drops: 0, vehicleNumber: 'NB-003-RF', notes: 'Clock Out' },
+      { id: 'blk-1-1', type: 'DUTY_START', startHour: 6.0, endHour: 6.5, label: 'Duty Start', vehicleNumber: 'NB-003-RF' },
+      { id: 'blk-1-2', type: 'DUTY_END', startHour: 19.5, endHour: 20.0, label: 'Duty End', vehicleNumber: 'NB-003-RF' },
     ],
   },
   {
@@ -57,11 +53,8 @@ export const INITIAL_DRIVERS = [
     startDutyHour: 7.0,
     endDutyHour: 19.0,
     blocks: [
-      { id: 'blk-2-1', type: 'DUTY_START', startHour: 7.0, endHour: 7.5, label: 'Start Duty', pickups: 0, drops: 0, vehicleNumber: 'DL-04-AB-1290', notes: 'Morning Prep' },
-      { id: 'blk-2-2', type: 'TRIP', startHour: 8.5, endHour: 12.5, label: '3 Pickup 2 Drop', pickups: 3, drops: 2, vehicleNumber: 'DL-04-AB-1290', notes: 'Parking to Engineering' },
-      { id: 'blk-2-3', type: 'BREAK', startHour: 13.0, endHour: 14.0, label: 'Break', pickups: 0, drops: 0, vehicleNumber: 'DL-04-AB-1290', notes: 'Rest Period' },
-      { id: 'blk-2-4', type: 'VEHICLE_CHANGE', startHour: 14.5, endHour: 15.5, label: 'Vehicle Change', pickups: 0, drops: 0, vehicleNumber: 'DL-04-AB-1290', notes: 'Maintenance swap' },
-      { id: 'blk-2-5', type: 'DUTY_END', startHour: 18.5, endHour: 19.0, label: 'Duty End', pickups: 0, drops: 0, vehicleNumber: 'DL-04-AB-1290', notes: 'Shift End' },
+      { id: 'blk-2-1', type: 'DUTY_START', startHour: 7.0, endHour: 7.5, label: 'Duty Start', vehicleNumber: 'DL-04-AB-1290' },
+      { id: 'blk-2-2', type: 'DUTY_END', startHour: 18.5, endHour: 19.0, label: 'Duty End', vehicleNumber: 'DL-04-AB-1290' },
     ],
   },
   {
@@ -75,11 +68,8 @@ export const INITIAL_DRIVERS = [
     startDutyHour: 8.0,
     endDutyHour: 21.0,
     blocks: [
-      { id: 'blk-3-1', type: 'DUTY_START', startHour: 8.0, endHour: 8.5, label: 'Start Duty', pickups: 0, drops: 0, vehicleNumber: 'KA-05-MN-9921', notes: 'Inspection' },
-      { id: 'blk-3-2', type: 'TRIP', startHour: 9.5, endHour: 13.0, label: '2 Pickup 3 Drop', pickups: 2, drops: 3, vehicleNumber: 'KA-05-MN-9921', notes: 'Sports Complex to Cafeteria' },
-      { id: 'blk-3-3', type: 'BREAK', startHour: 14.0, endHour: 15.0, label: 'Break', pickups: 0, drops: 0, vehicleNumber: 'KA-05-MN-9921', notes: 'Afternoon Break' },
-      { id: 'blk-3-4', type: 'TRIP', startHour: 16.5, endHour: 20.0, label: '5 Pickup 3 Drop', pickups: 5, drops: 3, vehicleNumber: 'KA-05-MN-9921', notes: 'Evening Campus Loop' },
-      { id: 'blk-3-5', type: 'DUTY_END', startHour: 20.5, endHour: 21.0, label: 'Duty End', pickups: 0, drops: 0, vehicleNumber: 'KA-05-MN-9921', notes: 'Turn in keys' },
+      { id: 'blk-3-1', type: 'DUTY_START', startHour: 8.0, endHour: 8.5, label: 'Duty Start', vehicleNumber: 'KA-05-MN-9921' },
+      { id: 'blk-3-2', type: 'DUTY_END', startHour: 20.5, endHour: 21.0, label: 'Duty End', vehicleNumber: 'KA-05-MN-9921' },
     ],
   },
   {
@@ -93,11 +83,8 @@ export const INITIAL_DRIVERS = [
     startDutyHour: 7.0,
     endDutyHour: 19.0,
     blocks: [
-      { id: 'blk-4-1', type: 'DUTY_START', startHour: 7.0, endHour: 7.5, label: 'Start Duty', pickups: 0, drops: 0, vehicleNumber: 'NB-002-RF', notes: 'Clock In' },
-      { id: 'blk-4-2', type: 'TRIP', startHour: 8.0, endHour: 11.5, label: '4 Pickup 2 Drop', pickups: 4, drops: 2, vehicleNumber: 'NB-002-RF', notes: 'Library & Data Centre Loop' },
-      { id: 'blk-4-3', type: 'TRIP', startHour: 11.5, endHour: 14.0, label: '3 Pickup 3 Drop', pickups: 3, drops: 3, vehicleNumber: 'NB-002-RF', notes: 'Thompson Booking 123123' },
-      { id: 'blk-4-4', type: 'BREAK', startHour: 14.5, endHour: 15.5, label: 'Break', pickups: 0, drops: 0, vehicleNumber: 'NB-002-RF', notes: 'Afternoon rest' },
-      { id: 'blk-4-5', type: 'TRIP', startHour: 16.0, endHour: 18.5, label: '2 Pickup 4 Drop', pickups: 2, drops: 4, vehicleNumber: 'NB-002-RF', notes: 'Late Afternoon Transit' },
+      { id: 'blk-4-1', type: 'DUTY_START', startHour: 7.0, endHour: 7.5, label: 'Duty Start', vehicleNumber: 'NB-002-RF' },
+      { id: 'blk-4-2', type: 'DUTY_END', startHour: 18.5, endHour: 19.0, label: 'Duty End', vehicleNumber: 'NB-002-RF' },
     ],
   },
   {
@@ -111,10 +98,8 @@ export const INITIAL_DRIVERS = [
     startDutyHour: 6.0,
     endDutyHour: 16.0,
     blocks: [
-      { id: 'blk-5-1', type: 'DUTY_START', startHour: 6.0, endHour: 6.5, label: 'Start Duty', pickups: 0, drops: 0, vehicleNumber: 'MH-12-PQ-4412', notes: 'Battery check' },
-      { id: 'blk-5-2', type: 'TRIP', startHour: 7.0, endHour: 11.0, label: '6 Pickup 5 Drop', pickups: 6, drops: 5, vehicleNumber: 'MH-12-PQ-4412', notes: 'Hostel to Main Academic Gate' },
-      { id: 'blk-5-3', type: 'BREAK', startHour: 11.5, endHour: 12.5, label: 'Break', pickups: 0, drops: 0, vehicleNumber: 'MH-12-PQ-4412', notes: 'Recharging break' },
-      { id: 'blk-5-4', type: 'TRIP', startHour: 13.0, endHour: 15.5, label: '3 Pickup 3 Drop', pickups: 3, drops: 3, vehicleNumber: 'MH-12-PQ-4412', notes: 'Research Park Loop' },
+      { id: 'blk-5-1', type: 'DUTY_START', startHour: 6.0, endHour: 6.5, label: 'Duty Start', vehicleNumber: 'MH-12-PQ-4412' },
+      { id: 'blk-5-2', type: 'DUTY_END', startHour: 15.5, endHour: 16.0, label: 'Duty End', vehicleNumber: 'MH-12-PQ-4412' },
     ],
   },
   {
@@ -128,10 +113,8 @@ export const INITIAL_DRIVERS = [
     startDutyHour: 9.0,
     endDutyHour: 22.0,
     blocks: [
-      { id: 'blk-6-1', type: 'DUTY_START', startHour: 9.0, endHour: 9.5, label: 'Start Duty', pickups: 0, drops: 0, vehicleNumber: 'UP-32-BZ-8821', notes: 'Morning check' },
-      { id: 'blk-6-2', type: 'TRIP', startHour: 10.0, endHour: 14.0, label: '4 Pickup 4 Drop', pickups: 4, drops: 4, vehicleNumber: 'UP-32-BZ-8821', notes: 'Central Ring Route' },
-      { id: 'blk-6-3', type: 'BREAK', startHour: 14.5, endHour: 15.5, label: 'Break', pickups: 0, drops: 0, vehicleNumber: 'UP-32-BZ-8821', notes: 'Lunch' },
-      { id: 'blk-6-4', type: 'TRIP', startHour: 16.0, endHour: 21.0, label: '7 Pickup 6 Drop', pickups: 7, drops: 6, vehicleNumber: 'UP-32-BZ-8821', notes: 'Evening Library & Lab Rush' },
+      { id: 'blk-6-1', type: 'DUTY_START', startHour: 9.0, endHour: 9.5, label: 'Duty Start', vehicleNumber: 'UP-32-BZ-8821' },
+      { id: 'blk-6-2', type: 'DUTY_END', startHour: 21.5, endHour: 22.0, label: 'Duty End', vehicleNumber: 'UP-32-BZ-8821' },
     ],
   },
 ];

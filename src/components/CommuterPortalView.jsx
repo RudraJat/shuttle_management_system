@@ -54,6 +54,10 @@ export const CommuterPortalView = ({
     const nowHours = String(now.getHours()).padStart(2, '0');
     const nowMins = String(now.getMinutes()).padStart(2, '0');
     const [pickupHour, pickupMinute] = (requestedTime || `${nowHours}:${nowMins}`).split(':').map(Number);
+    if (pickupHour < 6 || (pickupHour >= 22 && pickupMinute > 0)) {
+      alert('Campus shuttle network operating hours are between 06:00 and 22:00. Please select a time within active driver duty shifts.');
+      return;
+    }
     const dropTotalMinutes = pickupHour * 60 + pickupMinute + 14;
     const dropMins = String(dropTotalMinutes % 60).padStart(2, '0');
     const dropHours = String(Math.floor(dropTotalMinutes / 60) % 24).padStart(2, '0');

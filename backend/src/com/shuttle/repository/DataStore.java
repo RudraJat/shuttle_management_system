@@ -71,50 +71,33 @@ public class DataStore {
     private void seedInitialData() {
         // --- 1. Drivers & Timeline Schedules matching Screenshot page 12 ---
         Driver d1 = new Driver("drv-1", "Samuel Jones", "+1-415-555-0101", "Online", 4.8, "NB-003-RF", "UA3282 White Bus | 12 Seater", 6.0, 20.0);
-        d1.addBlock(new DutyBlock("blk-1-1", "DUTY_START", 6.0, 7.0, "Start Duty", 0, 0, "NB-003-RF", "Shift Start"));
-        d1.addBlock(new DutyBlock("blk-1-2", "TRIP", 8.0, 12.0, "2 Pickup 3 Drop", 2, 3, "NB-003-RF", "Library to Data Centre"));
-        d1.addBlock(new DutyBlock("blk-1-3", "BREAK", 13.0, 14.5, "Lunch Break", 0, 0, "NB-003-RF", "Designated Canteen Rest"));
-        d1.addBlock(new DutyBlock("blk-1-4", "EMPTY_LEG", 15.0, 16.0, "Empty Leg", 0, 0, "NB-003-RF", "Depot Relocation"));
-        d1.addBlock(new DutyBlock("blk-1-5", "TRIP", 16.0, 19.0, "4 Pickup 4 Drop", 4, 4, "NB-003-RF", "Hostel to Main Gate"));
-        d1.addBlock(new DutyBlock("blk-1-6", "DUTY_END", 19.5, 20.0, "Duty End", 0, 0, "NB-003-RF", "Clock Out"));
+        d1.addBlock(new DutyBlock("blk-1-1", "DUTY_START", 6.0, 6.5, "Duty Start", 0, 0, "NB-003-RF", "LIVE"));
+        d1.addBlock(new DutyBlock("blk-1-2", "DUTY_END", 19.5, 20.0, "Duty End", 0, 0, "NB-003-RF", "LIVE"));
         drivers.put(d1.getId(), d1);
 
         Driver d2 = new Driver("drv-2", "Bob Jones", "+1-415-555-0102", "Offline", 4.6, "DL-04-AB-1290", "Shuttle Van B4 | 8 Seater", 7.0, 19.0);
-        d2.addBlock(new DutyBlock("blk-2-1", "DUTY_START", 7.0, 7.5, "Start Duty", 0, 0, "DL-04-AB-1290", "Morning Prep"));
-        d2.addBlock(new DutyBlock("blk-2-2", "TRIP", 8.5, 12.5, "3 Pickup 2 Drop", 3, 2, "DL-04-AB-1290", "Parking to Engineering"));
-        d2.addBlock(new DutyBlock("blk-2-3", "BREAK", 13.0, 14.0, "Break", 0, 0, "DL-04-AB-1290", "Rest Period"));
-        d2.addBlock(new DutyBlock("blk-2-4", "VEHICLE_CHANGE", 14.5, 15.5, "Vehicle Change", 0, 0, "DL-04-AB-1290", "Maintenance swap"));
-        d2.addBlock(new DutyBlock("blk-2-5", "DUTY_END", 18.5, 19.0, "Duty End", 0, 0, "DL-04-AB-1290", "Shift End"));
+        d2.addBlock(new DutyBlock("blk-2-1", "DUTY_START", 7.0, 7.5, "Duty Start", 0, 0, "DL-04-AB-1290", "LIVE"));
+        d2.addBlock(new DutyBlock("blk-2-2", "DUTY_END", 18.5, 19.0, "Duty End", 0, 0, "DL-04-AB-1290", "LIVE"));
         drivers.put(d2.getId(), d2);
 
         Driver d3 = new Driver("drv-3", "Jonathan Spikes", "+1-415-555-0103", "Offline", 4.7, "KA-05-MN-9921", "Campus Cruiser 7 | 15 Seater", 8.0, 21.0);
-        d3.addBlock(new DutyBlock("blk-3-1", "DUTY_START", 8.0, 8.5, "Start Duty", 0, 0, "KA-05-MN-9921", "Inspection"));
-        d3.addBlock(new DutyBlock("blk-3-2", "TRIP", 9.5, 13.0, "2 Pickup 3 Drop", 2, 3, "KA-05-MN-9921", "Sports Complex to Cafeteria"));
-        d3.addBlock(new DutyBlock("blk-3-3", "BREAK", 14.0, 15.0, "Break", 0, 0, "KA-05-MN-9921", "Afternoon Break"));
-        d3.addBlock(new DutyBlock("blk-3-4", "TRIP", 16.5, 20.0, "5 Pickup 3 Drop", 5, 3, "KA-05-MN-9921", "Evening Campus Loop"));
-        d3.addBlock(new DutyBlock("blk-3-5", "DUTY_END", 20.5, 21.0, "Duty End", 0, 0, "KA-05-MN-9921", "Turn in keys"));
+        d3.addBlock(new DutyBlock("blk-3-1", "DUTY_START", 8.0, 8.5, "Duty Start", 0, 0, "KA-05-MN-9921", "LIVE"));
+        d3.addBlock(new DutyBlock("blk-3-2", "DUTY_END", 20.5, 21.0, "Duty End", 0, 0, "KA-05-MN-9921", "LIVE"));
         drivers.put(d3.getId(), d3);
 
         Driver d4 = new Driver("drv-4", "Steve Smith", "+1-322-493-3292", "Online", 4.5, "NB-002-RF", "UA3282 White Bus | 12 Seater", 7.0, 19.0);
-        d4.addBlock(new DutyBlock("blk-4-1", "DUTY_START", 7.0, 7.5, "Start Duty", 0, 0, "NB-002-RF", "Clock In"));
-        d4.addBlock(new DutyBlock("blk-4-2", "TRIP", 8.0, 11.5, "4 Pickup 2 Drop", 4, 2, "NB-002-RF", "Library & Data Centre Loop"));
-        d4.addBlock(new DutyBlock("blk-4-3", "TRIP", 11.5, 14.0, "3 Pickup 3 Drop", 3, 3, "NB-002-RF", "Thompson Booking 123123"));
-        d4.addBlock(new DutyBlock("blk-4-4", "BREAK", 14.5, 15.5, "Break", 0, 0, "NB-002-RF", "Afternoon rest"));
-        d4.addBlock(new DutyBlock("blk-4-5", "TRIP", 16.0, 18.5, "2 Pickup 4 Drop", 2, 4, "NB-002-RF", "Late Afternoon Transit"));
+        d4.addBlock(new DutyBlock("blk-4-1", "DUTY_START", 7.0, 7.5, "Duty Start", 0, 0, "NB-002-RF", "LIVE"));
+        d4.addBlock(new DutyBlock("blk-4-2", "DUTY_END", 18.5, 19.0, "Duty End", 0, 0, "NB-002-RF", "LIVE"));
         drivers.put(d4.getId(), d4);
 
         Driver d5 = new Driver("drv-5", "Anita Sharma", "+1-415-555-0105", "Online", 4.9, "MH-12-PQ-4412", "Green Electric MiniBus | 16 Seater", 6.0, 16.0);
-        d5.addBlock(new DutyBlock("blk-5-1", "DUTY_START", 6.0, 6.5, "Start Duty", 0, 0, "MH-12-PQ-4412", "Battery check"));
-        d5.addBlock(new DutyBlock("blk-5-2", "TRIP", 7.0, 11.0, "6 Pickup 5 Drop", 6, 5, "MH-12-PQ-4412", "Hostel to Main Academic Gate"));
-        d5.addBlock(new DutyBlock("blk-5-3", "BREAK", 11.5, 12.5, "Break", 0, 0, "MH-12-PQ-4412", "Recharging break"));
-        d5.addBlock(new DutyBlock("blk-5-4", "TRIP", 13.0, 15.5, "3 Pickup 3 Drop", 3, 3, "MH-12-PQ-4412", "Research Park Loop"));
+        d5.addBlock(new DutyBlock("blk-5-1", "DUTY_START", 6.0, 6.5, "Duty Start", 0, 0, "MH-12-PQ-4412", "LIVE"));
+        d5.addBlock(new DutyBlock("blk-5-2", "DUTY_END", 15.5, 16.0, "Duty End", 0, 0, "MH-12-PQ-4412", "LIVE"));
         drivers.put(d5.getId(), d5);
 
         Driver d6 = new Driver("drv-6", "Priya Patel", "+1-415-555-0106", "Online", 4.8, "UP-32-BZ-8821", "City Runner 3 | 10 Seater", 9.0, 22.0);
-        d6.addBlock(new DutyBlock("blk-6-1", "DUTY_START", 9.0, 9.5, "Start Duty", 0, 0, "UP-32-BZ-8821", "Morning check"));
-        d6.addBlock(new DutyBlock("blk-6-2", "TRIP", 10.0, 14.0, "4 Pickup 4 Drop", 4, 4, "UP-32-BZ-8821", "Central Ring Route"));
-        d6.addBlock(new DutyBlock("blk-6-3", "BREAK", 14.5, 15.5, "Break", 0, 0, "UP-32-BZ-8821", "Lunch"));
-        d6.addBlock(new DutyBlock("blk-6-4", "TRIP", 16.0, 21.0, "7 Pickup 6 Drop", 7, 6, "UP-32-BZ-8821", "Evening Library & Lab Rush"));
+        d6.addBlock(new DutyBlock("blk-6-1", "DUTY_START", 9.0, 9.5, "Duty Start", 0, 0, "UP-32-BZ-8821", "LIVE"));
+        d6.addBlock(new DutyBlock("blk-6-2", "DUTY_END", 21.5, 22.0, "Duty End", 0, 0, "UP-32-BZ-8821", "LIVE"));
         drivers.put(d6.getId(), d6);
 
         // --- 2. Seed Bookings from Screenshots pages 12 and 13 ---

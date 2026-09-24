@@ -535,9 +535,11 @@ input, select, textarea {
 }
 
 /* Driver Timeline Styles */
-.timeline-viewport {
+.timeline-viewport,
+.timeline-container {
   overflow-x: auto;
   border-top: 1px solid var(--border-light);
+  -webkit-overflow-scrolling: touch;
 }
 
 .timeline-header-hours {
@@ -672,16 +674,22 @@ input, select, textarea {
   background-image: repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(0,0,0,0.04) 6px, rgba(0,0,0,0.04) 12px);
 }
 .timeline-block.type-dutystart {
-  background: var(--brand-navy);
-  color: #fff;
-  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
-  font-size: 0.7rem;
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 1px solid #222222;
+  border-radius: var(--radius-sm);
+  font-size: 0.72rem;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
 }
 .timeline-block.type-dutyend {
-  background: var(--brand-navy);
-  color: #fff;
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  font-size: 0.7rem;
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 1px solid #222222;
+  border-radius: var(--radius-sm);
+  font-size: 0.72rem;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
 }
 .timeline-block.type-empty {
   background: var(--timeline-empty-bg);
@@ -693,6 +701,32 @@ input, select, textarea {
   border: 1px solid var(--timeline-veh-border);
   color: var(--timeline-veh-text);
 }
+
+.timeline-offduty-zone {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  background: rgba(148, 163, 184, 0.08);
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(0, 0, 0, 0.04) 8px, rgba(0, 0, 0, 0.04) 16px);
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed rgba(148, 163, 184, 0.2);
+}
+
+.offduty-tag {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.6;
+  user-select: none;
+}
+
 
 /* Timeline Legend */
 .timeline-legend {
